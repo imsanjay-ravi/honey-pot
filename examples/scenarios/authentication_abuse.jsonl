@@ -1,0 +1,8 @@
+{"timestamp": "2026-01-15T11:00:00.000000Z", "eventid": "cowrie.session.connect", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222}
+{"timestamp": "2026-01-15T11:00:01.000000Z", "eventid": "cowrie.login.failed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "admin"}
+{"timestamp": "2026-01-15T11:00:02.000000Z", "eventid": "cowrie.login.failed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "root"}
+{"timestamp": "2026-01-15T11:00:03.000000Z", "eventid": "cowrie.login.failed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "test"}
+{"timestamp": "2026-01-15T11:00:04.000000Z", "eventid": "cowrie.login.failed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "guest"}
+{"timestamp": "2026-01-15T11:00:05.000000Z", "eventid": "cowrie.login.failed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "deploy"}
+{"timestamp": "2026-01-15T11:00:06.000000Z", "eventid": "cowrie.login.failed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "support"}
+{"timestamp": "2026-01-15T11:00:07.000000Z", "eventid": "cowrie.session.closed", "session": "s-auth-02", "src_ip": "192.0.2.102", "dst_ip": "192.0.2.10", "dst_port": 2222}

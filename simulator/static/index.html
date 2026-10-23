@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linux Attacker Simulator — AI Adaptive Cyber Deception System</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/simulator.css">
+</head>
+<body>
+
+  <!-- Persistent Safety Warning Banner -->
+  <div class="safety-banner">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2L1 21h22L12 2zm0 3.5L20.3 19H3.7L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+    </svg>
+    <span>SIMULATION ONLY — NO REAL ATTACKS EXECUTED — STRICTLY IN-MEMORY ENVIRONMENT</span>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">&gt;_</div>
+      <div>
+        <div class="brand-title">Linux Attacker Simulator</div>
+        <div class="brand-subtitle">Controlled Honeypot Attack Telemetry & Deception Playground</div>
+      </div>
+    </div>
+
+    <div class="header-meta">
+      <div class="meta-pill">Target: <strong>192.0.2.10:2222</strong> (Simulated Cowrie)</div>
+      <div class="meta-pill">Session: <strong id="sessionIdDisplay" style="color: var(--term-cyan);">sim-sess-init</strong></div>
+      <button id="btnNewSession" class="btn" title="Start a fresh simulated session ID">+ New Session</button>
+      <button id="btnResetSession" class="btn btn-danger" title="Reset session and WorldState baseline">&#8634; Reset All</button>
+    </div>
+  </header>
+
+  <!-- Main Split Layout -->
+  <main class="main-container">
+    <!-- Left: Terminal Emulator -->
+    <div class="terminal-card">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+        </div>
+        <div class="terminal-title">attacker@kali-vm:~ (SSH to 192.0.2.10)</div>
+        <button id="btnClearTerminal" class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">Clear</button>
+      </div>
+
+      <div class="terminal-body" id="terminalBody">
+        <div id="terminalOutput"></div>
+        <div class="terminal-input-row">
+          <span class="terminal-prompt">root@attacker-vm:~#</span>
+          <input type="text" id="terminalInput" class="terminal-input" autofocus autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Attack Actions & Live Response Panel -->
+    <div class="side-panel">
+      <!-- 1. Attack Scenario Controls -->
+      <div class="card">
+        <div class="card-title">
+          <span>&#9874; Attack Actions</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">One-Click Sequences</span>
+        </div>
+        <div class="actions-grid">
+          <button class="btn-action" data-action="reconnaissance">
+            <span class="btn-action-label">&#128065; Reconnaissance</span>
+            <span class="btn-action-sub">whoami, uname, hostname, id</span>
+          </button>
+          <button class="btn-action" data-action="authentication_abuse">
+            <span class="btn-action-label">&#128272; Auth Spray (5x)</span>
+            <span class="btn-action-sub">Brute-force SSH logins</span>
+          </button>
+          <button class="btn-action" data-action="file_discovery">
+            <span class="btn-action-label">&#128193; File Discovery</span>
+            <span class="btn-action-sub">find, ls -la /var/www, locate</span>
+          </button>
+          <button class="btn-action" data-action="download_attempt">
+            <span class="btn-action-label">&#128229; Download Tool</span>
+            <span class="btn-action-sub">wget miner payload</span>
+          </button>
+          <button class="btn-action" data-action="privilege_escalation">
+            <span class="btn-action-label">&#9889; Priv Escalation</span>
+            <span class="btn-action-sub">cat /etc/passwd, shadow, .ssh</span>
+          </button>
+          <button class="btn-action" data-action="benign_activity">
+            <span class="btn-action-label">&#9989; Benign Activity</span>
+            <span class="btn-action-sub">date, echo health check</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Live Telemetry & Deception Response -->
+      <div class="card">
+        <div class="card-title">
+          <span>&#128737; Live Engine Response</span>
+          <span id="threatScoreDisplay" class="badge badge-low">0/100</span>
+        </div>
+        <div>
+          <div class="telemetry-row">
+            <span style="color: var(--text-muted);">Primary Classification:</span>
+            <span id="categoryDisplay" style="font-family: var(--font-mono); font-weight: 600; color: var(--term-cyan);">unknown</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--text-muted);">Deception Policy Fired:</span>
+            <span id="policyDisplay" style="font-family: var(--font-mono); font-size: 0.78rem;">POL-DEFAULT-NOOP</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--text-muted);">Approved Action:</span>
+            <span id="actionDisplay" style="font-family: var(--font-mono); font-size: 0.78rem;">no_op</span>
+          </div>
+          <div class="telemetry-row" style="border-bottom: none; flex-direction: column; align-items: flex-start; gap: 0.2rem; margin-top: 0.2rem;">
+            <span style="color: var(--text-muted);">Simulated State Transition:</span>
+            <span id="stateAppliedDisplay" style="font-family: var(--font-mono); font-size: 0.75rem; color: #38bdf8; word-break: break-all;">None (no-op)</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 0.75rem;">
+          <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem;">
+            Behaviour Findings
+          </div>
+          <div id="findingsDisplay">
+            <span style="color: var(--text-muted); font-size: 0.8rem;">No active behavioural findings.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Chronological Simulation Event Stream -->
+      <div class="card" style="flex: 1;">
+        <div class="card-title">
+          <span>&#128225; Generated Telemetry Log</span>
+        </div>
+        <div id="eventsLog" style="max-height: 180px; overflow-y: auto;">
+          <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">No events generated yet.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Script -->
+  <script src="js/simulator.js"></script>
+</body>
+</html>

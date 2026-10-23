@@ -1,8 +1,18 @@
 import argparse
 import json
-from collections import defaultdict
+import sys
+from collections import defaultdict, namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+# ============================================================
+# Parse warning record
+# ============================================================
+
+#: Returned alongside events from parse_cowrie_log() for every
+#: line that was skipped due to a recoverable error.
+ParseWarning = namedtuple("ParseWarning", ["line_number", "reason"])
 
 
 # ============================================================
@@ -11,12 +21,29 @@ from pathlib import Path
 
 def normalize_timestamp(timestamp):
     """
-    Convert a Cowrie timestamp into UTC ISO-8601 format.
+    Convert a Cowrie timestamp string into UTC ISO-8601 format.
+
+    Raises:
+        ValueError: if *timestamp* is not a string or cannot be parsed
+                    as an ISO-8601 datetime.
     """
 
-    dt = datetime.fromisoformat(
-        timestamp.replace("Z", "+00:00")
-    )
+    if not isinstance(timestamp, str):
+        raise ValueError(
+            f"timestamp must be a string, got {type(timestamp).__name__!r}"
+        )
+
+    if not timestamp.strip():
+        raise ValueError("timestamp is empty or whitespace-only")
+
+    try:
+        dt = datetime.fromisoformat(
+            timestamp.replace("Z", "+00:00")
+        )
+    except ValueError as error:
+        raise ValueError(
+            f"Cannot parse timestamp {timestamp!r}: {error}"
+        ) from error
 
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
@@ -30,14 +57,27 @@ def normalize_timestamp(timestamp):
 
 def normalize_event(raw):
     """
-    Convert one raw Cowrie event into the project's
+    Convert one raw Cowrie event dict into the project's
     normalized event representation.
+
+    Raises:
+        TypeError:  if *raw* is not a dict.
+        KeyError:   if the required ``timestamp`` field is absent.
+        ValueError: if ``timestamp`` cannot be parsed.
     """
+
+    if not isinstance(raw, dict):
+        raise TypeError(
+            f"Expected a dict, got {type(raw).__name__!r}"
+        )
+
+    # timestamp is required; let KeyError propagate to the caller
+    timestamp_str = raw["timestamp"]
 
     event_id = raw.get("eventid", "")
 
     event = {
-        "timestamp": normalize_timestamp(raw["timestamp"]),
+        "timestamp": normalize_timestamp(timestamp_str),
         "session_id": raw.get("session"),
         "event_type": None,
         "source_ip": raw.get("src_ip"),
@@ -151,43 +191,97 @@ def normalize_event(raw):
 def parse_cowrie_log(log_file):
     """
     Read a Cowrie JSON-lines log and return normalized events.
+
+    Behaviour for invalid lines:
+    - Blank lines are silently skipped.
+    - Lines that are not valid JSON, whose top-level value is not a
+      dict, whose ``timestamp`` field is absent, or whose timestamp
+      cannot be parsed are **skipped** and recorded as
+      :class:`ParseWarning` entries — they are not raised as
+      exceptions.  This makes the parser tolerant of file rotation
+      artefacts and truncated trailing lines without hiding errors
+      from the caller.
+
+    Returns:
+        tuple[list[dict], list[ParseWarning]]:
+            ``(events, warnings)`` where *events* is the list of
+            normalized event dicts and *warnings* lists every
+            skipped line with a human-readable reason.
+
+    Raises:
+        FileNotFoundError: if *log_file* does not exist.
+        OSError:           on other I/O failures.
     """
 
     log_file = Path(log_file)
 
     events = []
+    warnings = []
 
-    with log_file.open("r", encoding="utf-8") as file:
+    with log_file.open("r", encoding="utf-8") as fh:
 
-        for line_number, line in enumerate(file, start=1):
+        for line_number, line in enumerate(fh, start=1):
 
             line = line.strip()
 
+            # Blank lines are expected between rotated chunks.
             if not line:
                 continue
 
+            # ------------------------------------------------
+            # JSON decode
+            # ------------------------------------------------
             try:
-
                 raw_event = json.loads(line)
+            except json.JSONDecodeError as exc:
+                warnings.append(
+                    ParseWarning(
+                        line_number=line_number,
+                        reason=f"Invalid JSON: {exc}",
+                    )
+                )
+                continue
 
+            # ------------------------------------------------
+            # Type guard — each record must be a JSON object
+            # ------------------------------------------------
+            if not isinstance(raw_event, dict):
+                warnings.append(
+                    ParseWarning(
+                        line_number=line_number,
+                        reason=(
+                            f"Expected a JSON object, got "
+                            f"{type(raw_event).__name__!r}"
+                        ),
+                    )
+                )
+                continue
+
+            # ------------------------------------------------
+            # Normalize (includes timestamp validation)
+            # ------------------------------------------------
+            try:
                 normalized = normalize_event(raw_event)
+            except KeyError as exc:
+                warnings.append(
+                    ParseWarning(
+                        line_number=line_number,
+                        reason=f"Missing required field: {exc}",
+                    )
+                )
+                continue
+            except (TypeError, ValueError) as exc:
+                warnings.append(
+                    ParseWarning(
+                        line_number=line_number,
+                        reason=str(exc),
+                    )
+                )
+                continue
 
-                events.append(normalized)
+            events.append(normalized)
 
-            except json.JSONDecodeError as error:
-
-                raise ValueError(
-                    f"Invalid JSON at line {line_number}: {error}"
-                ) from error
-
-            except KeyError as error:
-
-                raise ValueError(
-                    f"Missing required field {error} "
-                    f"at line {line_number}"
-                ) from error
-
-    return events
+    return events, warnings
 
 
 # ============================================================
@@ -345,37 +439,56 @@ def save_json(data, output_file):
 
 def main():
 
-    parser = argparse.ArgumentParser(
+    arg_parser = argparse.ArgumentParser(
         description=(
             "Parse Cowrie logs into normalized events "
             "and attacker sessions."
         )
     )
 
-    parser.add_argument(
+    arg_parser.add_argument(
         "input",
         help="Path to Cowrie cowrie.json"
     )
 
-    parser.add_argument(
+    arg_parser.add_argument(
         "--events-output",
         default="data/normalized_events.json",
         help="Output file for normalized events"
     )
 
-    parser.add_argument(
+    arg_parser.add_argument(
         "--sessions-output",
         default="data/sessions.json",
         help="Output file for session summaries"
     )
 
-    args = parser.parse_args()
+    arg_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "Exit with a non-zero status code if any lines "
+            "were skipped due to parse errors."
+        ),
+    )
+
+    args = arg_parser.parse_args()
 
     # --------------------------------------------------------
     # Parse
     # --------------------------------------------------------
 
-    events = parse_cowrie_log(args.input)
+    events, warnings = parse_cowrie_log(args.input)
+
+    # --------------------------------------------------------
+    # Report warnings
+    # --------------------------------------------------------
+
+    for warning in warnings:
+        print(
+            f"WARNING line {warning.line_number}: {warning.reason}",
+            file=sys.stderr,
+        )
 
     # --------------------------------------------------------
     # Save normalized events
@@ -402,11 +515,16 @@ def main():
     # --------------------------------------------------------
 
     print(f"Parsed {len(events)} events.")
+    if warnings:
+        print(f"Skipped {len(warnings)} invalid line(s) — see warnings above.")
     print(f"Identified {len(sessions)} sessions.")
 
     print()
     print(f"Normalized events: {args.events_output}")
     print(f"Session summaries: {args.sessions_output}")
+
+    if args.strict and warnings:
+        sys.exit(1)
 
 
 # ============================================================

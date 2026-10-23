@@ -1,0 +1,6 @@
+{"timestamp": "2026-01-15T12:00:00.000000Z", "eventid": "cowrie.session.connect", "session": "s-filedisc-03", "src_ip": "192.0.2.103", "dst_ip": "192.0.2.10", "dst_port": 2222}
+{"timestamp": "2026-01-15T12:00:01.000000Z", "eventid": "cowrie.login.success", "session": "s-filedisc-03", "src_ip": "192.0.2.103", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "deploy"}
+{"timestamp": "2026-01-15T12:00:02.000000Z", "eventid": "cowrie.command.input", "session": "s-filedisc-03", "src_ip": "192.0.2.103", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "ls -la /var/www"}
+{"timestamp": "2026-01-15T12:00:03.000000Z", "eventid": "cowrie.command.input", "session": "s-filedisc-03", "src_ip": "192.0.2.103", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "find / -name \"*.env\" 2>/dev/null"}
+{"timestamp": "2026-01-15T12:00:04.000000Z", "eventid": "cowrie.command.input", "session": "s-filedisc-03", "src_ip": "192.0.2.103", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "locate backup"}
+{"timestamp": "2026-01-15T12:00:05.000000Z", "eventid": "cowrie.session.closed", "session": "s-filedisc-03", "src_ip": "192.0.2.103", "dst_ip": "192.0.2.10", "dst_port": 2222}

@@ -1,0 +1,8 @@
+{"timestamp": "2026-01-15T10:00:00.000000Z", "eventid": "cowrie.session.connect", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222}
+{"timestamp": "2026-01-15T10:00:01.000000Z", "eventid": "cowrie.login.success", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "root"}
+{"timestamp": "2026-01-15T10:00:02.000000Z", "eventid": "cowrie.command.input", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "whoami"}
+{"timestamp": "2026-01-15T10:00:03.000000Z", "eventid": "cowrie.command.input", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "uname -a"}
+{"timestamp": "2026-01-15T10:00:04.000000Z", "eventid": "cowrie.command.input", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "hostname"}
+{"timestamp": "2026-01-15T10:00:05.000000Z", "eventid": "cowrie.command.input", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "id"}
+{"timestamp": "2026-01-15T10:00:06.000000Z", "eventid": "cowrie.command.input", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "ifconfig"}
+{"timestamp": "2026-01-15T10:00:07.000000Z", "eventid": "cowrie.session.closed", "session": "s-recon-01", "src_ip": "192.0.2.101", "dst_ip": "192.0.2.10", "dst_port": 2222}

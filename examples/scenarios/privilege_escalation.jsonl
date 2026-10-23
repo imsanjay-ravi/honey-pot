@@ -1,0 +1,6 @@
+{"timestamp": "2026-01-15T14:00:00.000000Z", "eventid": "cowrie.session.connect", "session": "s-pe-05", "src_ip": "192.0.2.105", "dst_ip": "192.0.2.10", "dst_port": 2222}
+{"timestamp": "2026-01-15T14:00:01.000000Z", "eventid": "cowrie.login.success", "session": "s-pe-05", "src_ip": "192.0.2.105", "dst_ip": "192.0.2.10", "dst_port": 2222, "username": "root"}
+{"timestamp": "2026-01-15T14:00:02.000000Z", "eventid": "cowrie.command.input", "session": "s-pe-05", "src_ip": "192.0.2.105", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "cat /etc/passwd"}
+{"timestamp": "2026-01-15T14:00:03.000000Z", "eventid": "cowrie.command.input", "session": "s-pe-05", "src_ip": "192.0.2.105", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "cat /etc/shadow"}
+{"timestamp": "2026-01-15T14:00:04.000000Z", "eventid": "cowrie.command.input", "session": "s-pe-05", "src_ip": "192.0.2.105", "dst_ip": "192.0.2.10", "dst_port": 2222, "input": "cat /root/.ssh/id_rsa"}
+{"timestamp": "2026-01-15T14:00:05.000000Z", "eventid": "cowrie.session.closed", "session": "s-pe-05", "src_ip": "192.0.2.105", "dst_ip": "192.0.2.10", "dst_port": 2222}

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Adaptive Cyber Deception System — Ubuntu Analysis Dashboard</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+
+  <!-- App Header & Navigation Bar -->
+  <header class="app-header">
+    <div class="header-top">
+      <!-- Brand & Safety Status -->
+      <div class="brand-section">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">AI ADAPTIVE CYBER DECEPTION SYSTEM</div>
+          <div class="brand-subtitle">
+            <span>Ubuntu Analysis & Deception Dashboard</span>
+            <span class="safety-pill">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+              Simulated Fictional Environment (Offline)
+            </span>
+            <span id="sourceBadge" class="source-badge">Source: Synthetic Scenarios</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls: Source Selector, Scenario Selector & Actions -->
+      <div class="header-controls">
+        <div class="source-control-group">
+          <label for="sourceSelect" class="control-label">Source:</label>
+          <div class="select-wrapper">
+            <select id="sourceSelect" class="select-control" aria-label="Select Telemetry Source">
+              <option value="scenario">Synthetic Scenarios</option>
+              <option value="simulator">Attacker Simulator</option>
+              <option value="live_cowrie">Live Cowrie Telemetry</option>
+            </select>
+            <div class="select-chevron">&#9662;</div>
+          </div>
+        </div>
+
+        <div id="scenarioControlsGroup" class="scenario-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="select-wrapper">
+            <select id="scenarioSelect" class="select-control" aria-label="Select synthetic scenario">
+              <option value="">Loading scenarios...</option>
+            </select>
+            <div class="select-chevron">&#9662;</div>
+          </div>
+
+          <label class="checkbox-toggle" title="Accumulate state changes across multiple scenario runs">
+            <input type="checkbox" id="accumulateToggle">
+            <span>Accumulate</span>
+          </label>
+
+          <button id="btnRunScenario" class="btn btn-primary" title="Execute offline pipeline on selected scenario">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Run Scenario
+          </button>
+        </div>
+
+        <button id="btnRefresh" class="btn btn-secondary" title="Refresh current telemetry data from backend">
+          &#8635; Refresh
+        </button>
+
+        <button id="btnResetState" class="btn btn-danger" title="Reset simulated world state">
+          &#8634; Reset
+        </button>
+
+        <button id="btnExport" class="btn btn-secondary" title="Export sanitized JSON report">
+          &#128229; Export
+        </button>
+
+        <a id="linkSimulator" href="/simulator/" target="_blank" class="btn btn-simulator" title="Open Linux Attacker Simulator in a new window">
+          &#128421; Simulator &#8599;
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="nav-tab active" data-tab="overview" role="tab" aria-selected="true">
+        <span>&#128200;</span> Overview
+      </button>
+      <button class="nav-tab" data-tab="sessions" role="tab" aria-selected="false">
+        <span>&#128187;</span> Session Explorer
+      </button>
+      <button class="nav-tab" data-tab="graph" role="tab" aria-selected="false">
+        <span>&#128392;</span> Attack Timeline & Graph
+      </button>
+      <button class="nav-tab" data-tab="behaviour" role="tab" aria-selected="false">
+        <span>&#128269;</span> Behaviour Analysis
+      </button>
+      <button class="nav-tab" data-tab="deception" role="tab" aria-selected="false">
+        <span>&#128737;</span> Deception Planner
+      </button>
+      <button class="nav-tab" data-tab="reports" role="tab" aria-selected="false">
+        <span>&#128220;</span> Reports & Warnings
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Content Views -->
+  <main class="main-content">
+    <!-- 1. Overview -->
+    <div id="pane-overview" class="tab-pane active" role="tabpanel"></div>
+
+    <!-- 2. Session Explorer -->
+    <div id="pane-sessions" class="tab-pane" role="tabpanel"></div>
+
+    <!-- 3. Attack Timeline & Graph -->
+    <div id="pane-graph" class="tab-pane" role="tabpanel">
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-header">
+          <div class="card-title">&#128392; Interactive Attack & Deception Graph</div>
+          <span class="card-badge">Pan & Zoom Enabled</span>
+        </div>
+        <div class="graph-container" id="graphContainer"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">&#9201; Chronological Event Timeline</div>
+        </div>
+        <div id="timelineContent"></div>
+      </div>
+    </div>
+
+    <!-- 4. Behaviour Analysis -->
+    <div id="pane-behaviour" class="tab-pane" role="tabpanel"></div>
+
+    <!-- 5. Deception Planner -->
+    <div id="pane-deception" class="tab-pane" role="tabpanel"></div>
+
+    <!-- 6. Reports & Warnings -->
+    <div id="pane-reports" class="tab-pane" role="tabpanel"></div>
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
