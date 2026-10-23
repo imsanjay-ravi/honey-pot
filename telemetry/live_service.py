@@ -166,23 +166,42 @@ class LiveCowrieService:
         """Return live telemetry connection health status and ingestion metrics."""
         tailer_health = self.tailer.get_health().to_dict() if self.tailer else None
 
+        has_active = self.has_activity()
+        is_connected = False
         status = "waiting_for_events"
-        if self.has_activity():
-            status = "healthy"
+
+        if self.tailer and tailer_health:
+            if not tailer_health.get("file_exists"):
+                status = "tailer_path_unreachable"
+                is_connected = False
+            elif tailer_health.get("last_error"):
+                status = "error"
+                is_connected = False
+            elif has_active:
+                status = "healthy"
+                is_connected = True
+            else:
+                status = "tailing_log"
+                is_connected = True
         elif self.collector_connected:
-            status = "connected"
-        elif tailer_health and tailer_health.get("file_exists"):
-            status = "tailing_log"
-        elif tailer_health and not tailer_health.get("file_exists"):
-            status = "tailer_path_unreachable"
+            is_connected = True
+            status = "healthy" if has_active else "connected"
+        elif has_active:
+            is_connected = True
+            status = "healthy"
+        else:
+            status = "waiting_for_events"
+            is_connected = False
 
         return {
             "status": status,
-            "has_activity": self.has_activity(),
+            "connected": is_connected,
+            "has_activity": has_active,
             "total_events_ingested": len(self.events),
             "total_sessions_analyzed": len(self.sessions),
             "warnings_count": len(self.warnings),
             "last_ingest_time": self.last_ingest_time,
+            "last_ingested_at": self.last_ingest_time,
             "last_poll_time": self.last_poll_time,
             "collector_connected": self.collector_connected,
             "last_collector_ip": self.last_collector_ip,
@@ -242,6 +261,26 @@ class LiveCowrieService:
             advisory_history.append(item)
         world_dict["action_history"] = advisory_history
 
+        # Deception metric semantics:
+        # Phase 7 live telemetry is strictly read-only.
+        # Zero actions were executed on the real honeypot.
+        # Actions generated are simulated policy recommendations.
+        executed_count = 0
+        recommendations_count = len([
+            a for a in advisory_history
+            if a.get("action_id") and a.get("action_id") != "no_op"
+        ])
+        deception_metric = {
+            "label": "RECOMMENDATIONS GENERATED",
+            "value": recommendations_count,
+            "actions_executed_count": executed_count,
+            "recommendations_count": recommendations_count,
+            "is_advisory": True,
+            "status_note": "Read-Only: 0 actions executed on real honeypot",
+        }
+
+        health_dict = self.get_health()
+
         return {
             "loaded": has_active,
             "source": "live_cowrie",
@@ -254,8 +293,9 @@ class LiveCowrieService:
             "sessions_count": len(session_records) if has_active else 0,
             "sessions": session_records if has_active else [],
             "world_state": world_dict,
-            "live_health": self.get_health(),
-            "health": self.get_health(),
+            "deception_metric": deception_metric,
+            "live_health": health_dict,
+            "health": health_dict,
         }
 
     def reset(self) -> None:

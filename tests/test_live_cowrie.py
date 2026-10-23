@@ -28,11 +28,13 @@ import socket
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
 from dashboard.app import app
+from telemetry.collector import run_collector
 from telemetry.cowrie_source import CowrieLogTailer, CowrieSourceConfig
 from telemetry.live_service import LiveCowrieService, get_live_service
 
@@ -435,6 +437,130 @@ class TestDashboardLiveCowrieIntegration(unittest.TestCase):
         data = res5.json()
         self.assertEqual(data["events_ingested"], 0)
         self.assertGreaterEqual(len(data["warnings"]), 1)
+
+    def test_15_deception_action_counter_semantics_and_advisory_label(self):
+        """
+        Verify that deception action metrics strictly distinguish between
+        executed simulated actions vs advisory recommendations:
+        - For Live Cowrie: label is 'RECOMMENDATIONS GENERATED', actions_executed_count is 0,
+          and is_advisory is True.
+        - For Synthetic Scenarios & Simulator: label is 'DECEPTION ACTIONS EXECUTED',
+          and is_advisory is False.
+        """
+        token = os.environ.get("COWRIE_INGEST_TOKEN", "cowrie-live-telemetry-secret-token")
+
+        # 1. Ingest live recon event into Live Cowrie
+        self.client.post(
+            "/api/telemetry/ingest",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"events": [SAMPLE_EVENT_1, SAMPLE_EVENT_2, SAMPLE_EVENT_3, SAMPLE_EVENT_4]},
+        )
+        live_res = self.client.get("/api/current-state?source=live_cowrie")
+        self.assertEqual(live_res.status_code, 200)
+        live_data = live_res.json()
+        self.assertIn("deception_metric", live_data)
+        metric = live_data["deception_metric"]
+        self.assertEqual(metric["label"], "RECOMMENDATIONS GENERATED")
+        self.assertEqual(metric["actions_executed_count"], 0)
+        self.assertTrue(metric["is_advisory"])
+        self.assertIn("Read-Only", metric["status_note"])
+
+        # 2. Compare with Synthetic Scenario run
+        sc_res = self.client.post(
+            "/api/run-scenario",
+            json={"scenario": "reconnaissance.jsonl", "accumulate_state": False},
+        )
+        self.assertEqual(sc_res.status_code, 200)
+        sc_data = self.client.get("/api/current-state?source=scenario").json()
+        sc_metric = sc_data["deception_metric"]
+        self.assertEqual(sc_metric["label"], "DECEPTION ACTIONS EXECUTED")
+        self.assertFalse(sc_metric["is_advisory"])
+        self.assertGreaterEqual(sc_metric["actions_executed_count"], 1)
+
+    def test_16_live_status_states_distinction(self):
+        """
+        Verify that the backend accurately distinguishes:
+        1. Live Cowrie connected and receiving events
+        2. Live source selected but waiting for events
+        3. Telemetry disconnected or unreachable
+        4. Synthetic/simulator mode
+        """
+        # State 1: Reset live service -> waiting for events
+        self.client.post("/api/reset?target=live_cowrie")
+        waiting_state = self.client.get("/api/current-state?source=live_cowrie").json()
+        health_waiting = waiting_state["health"]
+        self.assertEqual(health_waiting["status"], "waiting_for_events")
+        self.assertFalse(health_waiting["has_activity"])
+
+        # State 2: Tailer unreachable
+        unreachable_service = LiveCowrieService(tailer=CowrieLogTailer(log_path="/path/to/nonexistent/cowrie.json"))
+        unreachable_health = unreachable_service.get_health()
+        self.assertEqual(unreachable_health["status"], "tailer_path_unreachable")
+        self.assertFalse(unreachable_health["connected"])
+
+        # State 3: Live Cowrie connected and receiving events
+        token = os.environ.get("COWRIE_INGEST_TOKEN", "cowrie-live-telemetry-secret-token")
+        self.client.post(
+            "/api/telemetry/ingest",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"events": [SAMPLE_EVENT_1]},
+        )
+        active_state = self.client.get("/api/current-state?source=live_cowrie").json()
+        health_active = active_state["health"]
+        self.assertEqual(health_active["status"], "healthy")
+        self.assertTrue(health_active["connected"])
+        self.assertTrue(health_active["has_activity"])
+        self.assertEqual(active_state["events_parsed"], 1)
+
+        # State 4: Synthetic and Simulator modes are identified as separate sources
+        sc_state = self.client.get("/api/current-state?source=scenario").json()
+        self.assertEqual(sc_state["source"], "scenario")
+
+        sim_state = self.client.get("/api/current-state?source=simulator").json()
+        self.assertEqual(sim_state["source"], "simulator")
+
+    def test_17_collector_retains_offset_on_failed_transmission(self):
+        """
+        Regression test: Verify that run_collector does NOT advance its log offset
+        if forward_batch fails (e.g. transient network drop or backend restart).
+        Events remain queued at the exact offset and are transmitted on the next attempt.
+        """
+        temp_dir = tempfile.mkdtemp(prefix="collector_offset_test_")
+        try:
+            log_file = Path(temp_dir) / "cowrie.json"
+            event_line = json.dumps(SAMPLE_EVENT_1) + "\n"
+            log_file.write_text(event_line, encoding="utf-8")
+
+            # 1. First poll with simulated transmission failure (mock forward_batch returning False)
+            with patch("telemetry.collector.forward_batch", return_value=False) as mock_forward:
+                offset_1, sent_1 = run_collector(
+                    log_path=log_file,
+                    server_url="http://mock-server:8000",
+                    auth_token="test-tok",
+                    once=True,
+                    start_offset=0,
+                )
+                self.assertEqual(mock_forward.call_count, 1)
+                # Offset MUST NOT have advanced past the failed event
+                self.assertEqual(offset_1, 0)
+                self.assertEqual(sent_1, 0)
+
+            # 2. Second poll when network/server recovers (mock forward_batch returning True)
+            with patch("telemetry.collector.forward_batch", return_value=True) as mock_forward:
+                offset_2, sent_2 = run_collector(
+                    log_path=log_file,
+                    server_url="http://mock-server:8000",
+                    auth_token="test-tok",
+                    once=True,
+                    start_offset=offset_1,
+                )
+                self.assertEqual(mock_forward.call_count, 1)
+                # Offset NOW successfully advances to the end of the file
+                self.assertGreater(offset_2, 0)
+                self.assertEqual(offset_2, log_file.stat().st_size)
+                self.assertEqual(sent_2, 1)
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

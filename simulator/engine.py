@@ -509,6 +509,23 @@ class SimulatorEngine:
             "sessions_count": len(session_records) if has_active else 0,
             "sessions": session_records if has_active else [],
             "world_state": self.world_state.to_dict(),
+            "deception_metric": {
+                "label": "DECEPTION ACTIONS EXECUTED",
+                "value": len([
+                    a for a in self.world_state.action_history
+                    if a.get("action_id") and a.get("action_id") != "no_op" and a.get("success", True) is not False
+                ]),
+                "actions_executed_count": len([
+                    a for a in self.world_state.action_history
+                    if a.get("action_id") and a.get("action_id") != "no_op" and a.get("success", True) is not False
+                ]),
+                "recommendations_count": len([
+                    a for a in self.world_state.action_history
+                    if a.get("action_id") and a.get("action_id") != "no_op"
+                ]),
+                "is_advisory": False,
+                "status_note": "Applied to simulated environment",
+            },
         }
 
     def get_state(self) -> dict[str, Any]:

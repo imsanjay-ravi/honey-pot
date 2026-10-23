@@ -145,6 +145,38 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  transition: all 0.25s ease;
+}
+
+.safety-pill.status-scenario {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.safety-pill.status-simulator {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-indigo);
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.safety-pill.status-live-connected {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.safety-pill.status-live-waiting {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.safety-pill.status-live-unhealthy {
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.35);
 }
 
 /* Control Bar */

@@ -26,6 +26,8 @@
   const els = {
     sourceSelect: document.getElementById("sourceSelect"),
     sourceBadge: document.getElementById("sourceBadge"),
+    statusBadge: document.getElementById("statusBadge"),
+    statusBadgeText: document.getElementById("statusBadgeText"),
     scenarioControlsGroup: document.getElementById("scenarioControlsGroup"),
     scenarioSelect: document.getElementById("scenarioSelect"),
     accumulateToggle: document.getElementById("accumulateToggle"),
@@ -57,6 +59,55 @@
     }
   }
 
+  function updateHeaderStatusBadge() {
+    if (!els.statusBadge || !els.statusBadgeText) return;
+    const source = state.selectedSource;
+    const data = state.data;
+    const dotSvg = els.statusBadge.querySelector("svg");
+
+    if (source === "simulator") {
+      els.statusBadge.className = "safety-pill status-simulator";
+      els.statusBadgeText.textContent = "Simulated Attacker Environment (In-Memory)";
+      if (dotSvg) dotSvg.style.color = "var(--accent-indigo)";
+      return;
+    }
+
+    if (source === "scenario") {
+      els.statusBadge.className = "safety-pill status-scenario";
+      els.statusBadgeText.textContent = "Simulated Fictional Environment (Offline)";
+      if (dotSvg) dotSvg.style.color = "var(--accent-emerald)";
+      return;
+    }
+
+    if (source === "live_cowrie") {
+      const health = (data && data.health) || (data && data.live_health) || null;
+      const eventsCount = (data && typeof data.events_parsed === "number")
+        ? data.events_parsed
+        : ((health && typeof health.total_events_ingested === "number") ? health.total_events_ingested : 0);
+
+      const isUnhealthy = health && (
+        health.status === "error" ||
+        health.status === "tailer_path_unreachable" ||
+        Boolean(health.last_error) ||
+        (health.tailer && health.tailer.file_exists === false)
+      );
+
+      if (isUnhealthy) {
+        els.statusBadge.className = "safety-pill status-live-unhealthy";
+        els.statusBadgeText.textContent = "Live Telemetry: Disconnected / Unreachable";
+        if (dotSvg) dotSvg.style.color = "var(--accent-rose)";
+      } else if (eventsCount > 0) {
+        els.statusBadge.className = "safety-pill status-live-connected";
+        els.statusBadgeText.textContent = `Live Cowrie Connected & Receiving (${eventsCount} Events)`;
+        if (dotSvg) dotSvg.style.color = "#34d399";
+      } else {
+        els.statusBadge.className = "safety-pill status-live-waiting";
+        els.statusBadgeText.textContent = "Live Telemetry: Waiting for Events";
+        if (dotSvg) dotSvg.style.color = "var(--accent-amber)";
+      }
+    }
+  }
+
   function updateSourceUI() {
     const isSimulator = state.selectedSource === "simulator";
     const isLiveCowrie = state.selectedSource === "live_cowrie";
@@ -82,6 +133,7 @@
     if (els.scenarioControlsGroup) {
       els.scenarioControlsGroup.style.display = (isSimulator || isLiveCowrie) ? "none" : "flex";
     }
+    updateHeaderStatusBadge();
   }
 
   async function fetchScenarios() {
@@ -257,21 +309,44 @@
           </div>
         `;
       } else if (state.selectedSource === "live_cowrie") {
-        const health = (state.data && state.data.health) ? state.data.health : {};
+        const health = (state.data && state.data.health) || (state.data && state.data.live_health) || {};
+        const isUnhealthy = health && (
+          health.status === "error" ||
+          health.status === "tailer_path_unreachable" ||
+          Boolean(health.last_error) ||
+          (health.tailer && health.tailer.file_exists === false)
+        );
+
+        let statusTitle = "Waiting for Live Cowrie Telemetry";
+        let statusBadgeText = "WAITING FOR INGESTION";
+        let statusBadgeColor = "var(--accent-amber)";
+
+        if (isUnhealthy) {
+          statusTitle = "Live Telemetry Unreachable / Disconnected";
+          statusBadgeText = "DISCONNECTED / UNREACHABLE";
+          statusBadgeColor = "var(--accent-rose)";
+        } else if (health.connected) {
+          statusTitle = "Collector Connected — Waiting for Cowrie Events";
+          statusBadgeText = "CONNECTED (LISTENING)";
+          statusBadgeColor = "var(--accent-emerald)";
+        }
+
         container.innerHTML = `
           <div class="empty-state card">
-            <span class="empty-source-pill" style="border-color: rgba(6, 182, 212, 0.4); color: var(--accent-cyan);">&#128225; Active View: Live Cowrie Honeypot</span>
-            <div class="empty-icon" style="color: var(--accent-cyan);">&#128225;</div>
-            <div class="empty-title">Waiting for Live Cowrie Telemetry</div>
+            <span class="empty-source-pill" style="border-color: ${statusBadgeColor}; color: ${statusBadgeColor};">
+              &#128225; Active View: Live Cowrie Honeypot
+            </span>
+            <div class="empty-icon" style="color: ${statusBadgeColor};">&#128225;</div>
+            <div class="empty-title">${escapeHtml(statusTitle)}</div>
             <div class="empty-desc">
               The analysis pipeline is running in <strong>read-only mode</strong>. Send Cowrie JSON events to <code>/api/telemetry/ingest</code> using the Ubuntu collector (<code>python telemetry/collector.py</code>) or direct log tailing.
             </div>
             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 0.85rem 1.15rem; max-width: 520px; width: 100%; margin: 0 auto 1.25rem; font-size: 0.82rem; text-align: left; font-family: var(--font-mono); line-height: 1.6;">
-              <div>&bull; Collector Status: <span style="color: ${health.connected ? 'var(--accent-emerald)' : 'var(--accent-amber)'}; font-weight: 600;">${health.connected ? 'ONLINE / CONNECTED' : 'WAITING FOR INGESTION'}</span></div>
+              <div>&bull; Collector Status: <span style="color: ${statusBadgeColor}; font-weight: 600;">${statusBadgeText}</span></div>
               <div>&bull; Honeypot Safety: <span style="color: var(--accent-emerald); font-weight: 600;">READ-ONLY (Honeypot Unmodified)</span></div>
-              <div>&bull; Last Collection: <span style="color: var(--text-muted);">${escapeHtml(health.last_ingested_at || 'None recorded')}</span></div>
+              <div>&bull; Last Collection: <span style="color: var(--text-muted);">${escapeHtml(health.last_ingested_at || health.last_ingest_time || 'None recorded')}</span></div>
               <div>&bull; Ingested Count: <span style="color: var(--text-muted);">${health.total_events_ingested || 0} events</span></div>
-              <div>&bull; Parse Diagnostics: <span style="color: var(--text-muted);">${health.parse_warnings_count || 0} warning(s), ${health.ingestion_errors_count || 0} error(s)</span></div>
+              <div>&bull; Parse Diagnostics: <span style="color: var(--text-muted);">${health.warnings_count || 0} warning(s)</span></div>
             </div>
             <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 0.5rem; flex-wrap: wrap;">
               <button class="btn btn-secondary" onclick="document.getElementById('btnRefresh').click()">
@@ -302,7 +377,6 @@
     const { events_parsed, sessions_count, sessions, world_state } = state.data;
     const scores = sessions.map((s) => s.analysis.score);
     const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-    const actionsCount = (world_state.action_history || []).length;
 
     // Category Distribution
     const catCounts = {};
@@ -323,6 +397,27 @@
     const isLive = state.data.source === "live_cowrie";
     const sourceLabel = state.data.source_label || (isSim ? "Attacker Simulator" : (isLive ? "Live Cowrie Honeypot" : "Synthetic Scenarios"));
     const health = (isLive && state.data.health) ? state.data.health : null;
+
+    // Deception Action & Recommendation Semantics:
+    // Count only actions that the backend confirms were executed.
+    // For live telemetry (read-only), display RECOMMENDATIONS GENERATED.
+    const metricInfo = state.data.deception_metric || {};
+    const history = (world_state && world_state.action_history) || [];
+    const nonNoOpActions = history.filter((a) => a.action_id && a.action_id !== "no_op" && a.success !== false);
+
+    let metricLabel = "DECEPTION ACTIONS EXECUTED";
+    let metricValue = nonNoOpActions.length;
+    let metricNote = isSim ? "Applied to simulated environment" : "Simulated world state transitions";
+
+    if (isLive || metricInfo.is_advisory) {
+      metricLabel = "RECOMMENDATIONS GENERATED";
+      metricValue = typeof metricInfo.value === "number" ? metricInfo.value : nonNoOpActions.length;
+      metricNote = metricInfo.status_note || "Read-Only: 0 actions executed on real honeypot";
+    } else if (typeof metricInfo.value === "number") {
+      metricValue = metricInfo.value;
+      metricLabel = metricInfo.label || "DECEPTION ACTIONS EXECUTED";
+      metricNote = metricInfo.status_note || metricNote;
+    }
 
     container.innerHTML = `
       <div class="source-banner" style="${isLive ? 'border-left: 4px solid var(--accent-cyan);' : ''}">
@@ -379,12 +474,15 @@
         </div>
 
         <div class="card metric-card">
-          <div class="metric-icon-box" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">
-            &#128273;
+          <div class="metric-icon-box" style="background: ${isLive ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; color: ${isLive ? 'var(--accent-amber)' : 'var(--accent-emerald)'};">
+            ${isLive ? '&#128161;' : '&#128273;'}
           </div>
           <div class="metric-data">
-            <div class="metric-value">${actionsCount}</div>
-            <div class="metric-label">Deception Actions Executed</div>
+            <div class="metric-value">${metricValue}</div>
+            <div class="metric-label">${escapeHtml(metricLabel)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem;">
+              ${escapeHtml(metricNote)}
+            </div>
           </div>
         </div>
       </div>
@@ -1021,8 +1119,8 @@
       <!-- Action History Audit -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">&#128220; Deception Action Audit Trail</div>
-          <span class="card-badge">${history.length} Actions</span>
+          <div class="card-title">&#128220; ${isLive ? 'Deception Recommendations Audit Trail (Simulated)' : 'Deception Action Audit Trail'}</div>
+          <span class="card-badge">${history.length} ${isLive ? 'Recommendations' : 'Actions'}</span>
         </div>
         <div class="table-wrapper">
           <table class="data-table">

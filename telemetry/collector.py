@@ -81,9 +81,10 @@ def run_collector(
     batch_size: int = 100,
     dry_run: bool = False,
     once: bool = False,
-) -> None:
+    start_offset: int = 0,
+) -> tuple[int, int]:
     """
-    Continuous tail and forward loop.
+    Continuous tail and forward loop. Returns (current_offset, total_transmitted).
     """
     print(f"[*] Starting Cowrie Telemetry Collector (Phase 7)")
     print(f"[*] Target Log: {log_path}")
@@ -92,7 +93,7 @@ def run_collector(
     if dry_run:
         print("[*] DRY RUN MODE: Events will be read and validated but not transmitted.")
 
-    offset = 0
+    offset = start_offset
     total_transmitted = 0
 
     while True:
@@ -120,6 +121,7 @@ def run_collector(
         # Read newly appended lines
         if cur_size > offset:
             batch: list[dict[str, Any]] = []
+            new_offset = offset
 
             try:
                 # Strictly read-only
@@ -139,7 +141,7 @@ def run_collector(
 
                         raw_str = line.strip()
                         if not raw_str:
-                            offset = fh.tell()
+                            new_offset = fh.tell()
                             continue
 
                         try:
@@ -150,7 +152,7 @@ def run_collector(
                             # Skip malformed line
                             pass
 
-                        offset = fh.tell()
+                        new_offset = fh.tell()
 
             except OSError as exc:
                 print(f"[!] Error reading log: {exc}", file=sys.stderr)
@@ -159,20 +161,25 @@ def run_collector(
                 if dry_run:
                     print(f"[*] [DRY RUN] Read {len(batch)} events (total so far: {total_transmitted + len(batch)})")
                     total_transmitted += len(batch)
+                    offset = new_offset
                 else:
                     success = forward_batch(server_url, batch, auth_token)
                     if success:
                         total_transmitted += len(batch)
+                        offset = new_offset
                         print(f"[+] Transmitted {len(batch)} events to {server_url} (total: {total_transmitted})")
                     else:
-                        print(f"[-] Transmission failed for {len(batch)} events; will retry on next poll.")
-                        # Note: We do not advance offset if transmission fails in production,
-                        # but in polling loops we keep offset to avoid infinite re-read or rewind.
+                        print(f"[-] Transmission failed for {len(batch)} events; retaining offset {offset} to retry on next poll.")
+            elif new_offset > offset:
+                # Advance past blank or corrupt lines that yielded no valid events
+                offset = new_offset
 
         if once:
             break
 
         time.sleep(poll_interval)
+
+    return offset, total_transmitted
 
 
 def main() -> int:
