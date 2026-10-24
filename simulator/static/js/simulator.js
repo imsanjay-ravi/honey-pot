@@ -1,5 +1,6 @@
 /**
  * Linux Attacker Simulator — Interactive Client Application
+ * Hacker Terminal / Cyber-Ops Console Interface
  */
 
 (() => {
@@ -10,6 +11,7 @@
     history: [],
     historyIndex: -1,
     events: [],
+    isRunning: false,
   };
 
   const els = {
@@ -17,18 +19,28 @@
     terminalOutput: document.getElementById("terminalOutput"),
     terminalInput: document.getElementById("terminalInput"),
     sessionIdDisplay: document.getElementById("sessionIdDisplay"),
+    simStatusPill: document.getElementById("simStatusPill"),
+    simStatusText: document.getElementById("simStatusText"),
     btnNewSession: document.getElementById("btnNewSession"),
     btnResetSession: document.getElementById("btnResetSession"),
     btnClearTerminal: document.getElementById("btnClearTerminal"),
     threatScoreDisplay: document.getElementById("threatScoreDisplay"),
     categoryDisplay: document.getElementById("categoryDisplay"),
     findingsDisplay: document.getElementById("findingsDisplay"),
+    findingsCountBadge: document.getElementById("findingsCountBadge"),
     policyDisplay: document.getElementById("policyDisplay"),
     actionDisplay: document.getElementById("actionDisplay"),
     stateAppliedDisplay: document.getElementById("stateAppliedDisplay"),
     eventsLog: document.getElementById("eventsLog"),
     actionButtons: document.querySelectorAll(".btn-action"),
+    chips: document.querySelectorAll(".chip"),
   };
+
+  function setSimulatorStatus(status, label) {
+    if (!els.simStatusPill || !els.simStatusText) return;
+    els.simStatusPill.className = `status-pill status-${status}`;
+    els.simStatusText.textContent = label;
+  }
 
   async function apiPost(endpoint, body) {
     const res = await fetch(endpoint, {
@@ -50,7 +62,7 @@
   }
 
   function appendTerminal(command, output, isAction = false) {
-    if (!command && output && (output.startsWith("Connected") || output.startsWith("---"))) {
+    if (!command && output && (output.startsWith("Connected") || output.startsWith("---") || output.startsWith("AI Adaptive"))) {
       const banner = document.createElement("div");
       banner.className = "term-banner-block";
       banner.textContent = output;
@@ -66,9 +78,9 @@
       const cmdEl = document.createElement("div");
       cmdEl.className = "term-cmd";
       if (isAction) {
-        cmdEl.innerHTML = `<span style="color: #c084fc;">[SCENARIO ACTION]</span> <span>${escapeHtml(command)}</span>`;
+        cmdEl.innerHTML = `<span style="color: var(--info-cyan); font-weight: 700;">[PLAYBOOK ACTION]</span> <span>${escapeHtml(command)}</span>`;
       } else {
-        cmdEl.innerHTML = `<span style="color: #22c55e;">root@attacker-vm:~#</span> <span>${escapeHtml(command)}</span>`;
+        cmdEl.innerHTML = `<span style="color: var(--term-green); font-weight: 700;">root@attacker-vm:~#</span> <span>${escapeHtml(command)}</span>`;
       }
       block.appendChild(cmdEl);
     }
@@ -76,6 +88,14 @@
     if (output) {
       const outEl = document.createElement("div");
       outEl.className = "term-out";
+
+      // Highlight security-sensitive words in output
+      if (output.includes("Permission denied") || output.includes("Error:") || output.includes("not supported")) {
+        outEl.style.color = "var(--alert-red)";
+      } else if (output.includes("id_rsa_backup") || output.includes("SYNTHETIC_DECOY") || output.includes("saved")) {
+        outEl.style.color = "var(--warn-amber)";
+      }
+
       outEl.textContent = output;
       block.appendChild(outEl);
     }
@@ -89,48 +109,70 @@
 
     if (data.session_id) {
       state.sessionId = data.session_id;
-      els.sessionIdDisplay.textContent = data.session_id;
+      if (els.sessionIdDisplay) {
+        els.sessionIdDisplay.textContent = data.session_id;
+      }
     }
 
     const analysis = data.analysis || {};
     const deception = data.deception || {};
 
     // Threat Score
-    const score = analysis.score || 0;
-    els.threatScoreDisplay.textContent = `${score}/100`;
-    els.threatScoreDisplay.className = `badge ${score > 70 ? 'badge-high' : score > 25 ? 'badge-med' : 'badge-low'}`;
+    const score = typeof analysis.score === "number" ? analysis.score : 0;
+    if (els.threatScoreDisplay) {
+      els.threatScoreDisplay.textContent = `${score} / 100`;
+      els.threatScoreDisplay.className = `score-pill ${score > 70 ? 'score-high' : score > 25 ? 'score-med' : 'score-low'}`;
+    }
 
     // Primary Category
     const cat = analysis.primary_category || "unknown";
-    els.categoryDisplay.textContent = cat;
+    if (els.categoryDisplay) {
+      els.categoryDisplay.textContent = cat;
+    }
 
     // Findings
     const findings = analysis.findings || [];
-    if (findings.length === 0) {
-      els.findingsDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">No active behavioural findings.</span>`;
-    } else {
-      els.findingsDisplay.innerHTML = findings.map(f => `
-        <div class="finding-item">
-          <strong style="color: #38bdf8;">[${escapeHtml(f.rule_id)}]</strong> ${escapeHtml(f.evidence)}
-        </div>
-      `).join("");
+    if (els.findingsCountBadge) {
+      els.findingsCountBadge.textContent = findings.length;
+    }
+
+    if (els.findingsDisplay) {
+      if (findings.length === 0) {
+        els.findingsDisplay.innerHTML = `<div class="finding-empty">No active behavioural findings in this session.</div>`;
+      } else {
+        els.findingsDisplay.innerHTML = findings.map(f => `
+          <div class="finding-item">
+            <strong style="color: var(--info-cyan);">[${escapeHtml(f.rule_id)}]</strong>
+            <span style="color: var(--text-primary);">${escapeHtml(f.category || '')}</span> &bull;
+            <span>${escapeHtml(f.evidence)}</span>
+          </div>
+        `).join("");
+      }
     }
 
     // Deception Policy & Action
-    els.policyDisplay.textContent = deception.policy_id || "POL-DEFAULT-NOOP";
-    const action = deception.action || {};
-    els.actionDisplay.innerHTML = `
-      <span style="color: #22c55e; font-weight: 600;">${escapeHtml(action.action_id || 'no_op')}</span>
-      ${action.target ? `<span style="color: var(--text-muted); font-size: 0.75rem;">(${escapeHtml(action.target)})</span>` : ''}
-      <span class="badge ${deception.status === 'accepted' ? 'badge-accepted' : 'badge-noop'}">${deception.status || 'no_op'}</span>
-    `;
+    if (els.policyDisplay) {
+      els.policyDisplay.textContent = deception.policy_id || "POL-DEFAULT-NOOP";
+    }
+
+    if (els.actionDisplay) {
+      const action = deception.action || {};
+      const status = deception.status || 'no_op';
+      els.actionDisplay.innerHTML = `
+        <span style="color: var(--term-green); font-weight: 700;">${escapeHtml(action.action_id || 'no_op')}</span>
+        ${action.target ? `<span style="color: var(--text-muted); font-size: 0.7rem;">(${escapeHtml(action.target)})</span>` : ''}
+        <span class="badge ${status === 'accepted' ? 'badge-accepted' : 'badge-noop'}">${escapeHtml(status)}</span>
+      `;
+    }
 
     // State Change Applied
-    const stateApplied = deception.state_change_applied;
-    if (stateApplied && Object.keys(stateApplied).length > 0) {
-      els.stateAppliedDisplay.innerHTML = `<pre class="json-state-box">${escapeHtml(JSON.stringify(stateApplied, null, 2))}</pre>`;
-    } else {
-      els.stateAppliedDisplay.innerHTML = `<span style="color: var(--text-muted); font-size: 0.78rem;">None (no-op)</span>`;
+    if (els.stateAppliedDisplay) {
+      const stateApplied = deception.state_change_applied;
+      if (stateApplied && Object.keys(stateApplied).length > 0) {
+        els.stateAppliedDisplay.innerHTML = `<pre class="json-state-box">${escapeHtml(JSON.stringify(stateApplied, null, 2))}</pre>`;
+      } else {
+        els.stateAppliedDisplay.innerHTML = `<span class="state-none">None (baseline state)</span>`;
+      }
     }
 
     // Events Log
@@ -141,12 +183,14 @@
   }
 
   function renderEventsLog() {
+    if (!els.eventsLog) return;
+
     if (state.events.length === 0) {
-      els.eventsLog.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">No events generated yet.</div>`;
+      els.eventsLog.innerHTML = `<div class="finding-empty">No events generated yet. Run a command or playbook.</div>`;
       return;
     }
 
-    els.eventsLog.innerHTML = state.events.slice(0, 10).map((e) => {
+    els.eventsLog.innerHTML = state.events.slice(0, 12).map((e) => {
       const timeStr = e.timestamp ? (e.timestamp.split("T")[1] || "").slice(0, 8) : "";
       const detail = e.command || e.username || e.input || e.event_type || "";
       return `
@@ -163,7 +207,10 @@
 
   async function handleCommandSubmit(cmd) {
     const trimmed = cmd.trim();
-    if (!trimmed) return;
+    if (!trimmed || state.isRunning) return;
+
+    state.isRunning = true;
+    setSimulatorStatus("running", "EXECUTING...");
 
     state.history.push(trimmed);
     state.historyIndex = state.history.length;
@@ -175,10 +222,20 @@
       updateTelemetry(res);
     } catch (err) {
       appendTerminal(trimmed, `Error: ${err.message}`, false);
+    } finally {
+      state.isRunning = false;
+      setSimulatorStatus("ready", "READY");
+      els.terminalInput.focus();
     }
   }
 
   async function handleActionClick(actionName) {
+    if (state.isRunning) return;
+    state.isRunning = true;
+
+    setSimulatorStatus("running", `SIMULATING: ${actionName.toUpperCase()}`);
+    els.actionButtons.forEach(b => (b.disabled = true));
+
     try {
       appendTerminal(`Simulating Attack Scenario: ${actionName}`, "Dispatching scenario events through pipeline...", true);
       const res = await apiPost("/api/simulator/action", { action: actionName });
@@ -186,6 +243,11 @@
       updateTelemetry(res);
     } catch (err) {
       appendTerminal(actionName, `Action Error: ${err.message}`, true);
+    } finally {
+      state.isRunning = false;
+      setSimulatorStatus("ready", "READY");
+      els.actionButtons.forEach(b => (b.disabled = false));
+      els.terminalInput.focus();
     }
   }
 
@@ -193,7 +255,9 @@
     try {
       const stateData = await apiGet("/api/simulator/state");
       state.sessionId = stateData.session_id;
-      els.sessionIdDisplay.textContent = stateData.session_id;
+      if (els.sessionIdDisplay) {
+        els.sessionIdDisplay.textContent = stateData.session_id;
+      }
       state.events = (stateData.events || []).reverse();
       renderEventsLog();
       updateTelemetry(stateData);
@@ -201,9 +265,15 @@
       console.error("Failed to load initial simulator state:", err);
     }
 
-    appendTerminal("", "Connected to simulated Linux honeypot console.\nType 'help' to view the explicit allowlist of supported simulation commands.\n-------------------------------------------------------------");
+    appendTerminal(
+      "",
+      "Connected to simulated Linux honeypot console (corp-srv-db01).\n" +
+      "Environment: Fictional In-Memory Sandbox (Safety Boundary Active).\n" +
+      "Type 'help' to inspect supported simulation commands or select an Attack Playbook on the left.\n" +
+      "-----------------------------------------------------------------------------------------------"
+    );
 
-    // Enter Key on Terminal Input
+    // Keyboard Handler on Terminal Input
     els.terminalInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         handleCommandSubmit(els.terminalInput.value);
@@ -223,37 +293,63 @@
       }
     });
 
-    // Action buttons
+    // Action Playbook buttons
     els.actionButtons.forEach(btn => {
       btn.addEventListener("click", () => handleActionClick(btn.dataset.action));
     });
 
-    // Control buttons
+    // Quick Command Chips
+    els.chips.forEach(chip => {
+      chip.addEventListener("click", () => {
+        const cmd = chip.dataset.cmd;
+        if (cmd) {
+          els.terminalInput.value = cmd;
+          handleCommandSubmit(cmd);
+        }
+      });
+    });
+
+    // Clear Terminal button
     els.btnClearTerminal.addEventListener("click", () => {
       els.terminalOutput.innerHTML = "";
+      els.terminalInput.focus();
     });
 
+    // New Session button
     els.btnNewSession.addEventListener("click", async () => {
-      const res = await apiPost("/api/simulator/session/new", {});
-      state.sessionId = res.session_id;
-      els.sessionIdDisplay.textContent = res.session_id;
-      state.events = [];
-      renderEventsLog();
-      appendTerminal("", `--- Initialized fresh simulated session: ${res.session_id} ---`);
+      try {
+        const res = await apiPost("/api/simulator/session/new", {});
+        state.sessionId = res.session_id;
+        if (els.sessionIdDisplay) {
+          els.sessionIdDisplay.textContent = res.session_id;
+        }
+        state.events = [];
+        renderEventsLog();
+        appendTerminal("", `--- Initialized fresh simulated session: ${res.session_id} ---`);
+      } catch (err) {
+        appendTerminal("", `Failed to start new session: ${err.message}`);
+      }
     });
 
+    // Reset Session button
     els.btnResetSession.addEventListener("click", async () => {
-      if (!confirm("Reset simulator session and fictional WorldState to baseline?")) return;
-      const res = await apiPost("/api/simulator/reset", {});
-      state.sessionId = res.session_id;
-      els.sessionIdDisplay.textContent = res.session_id;
-      state.events = [];
-      renderEventsLog();
-      els.terminalOutput.innerHTML = "";
-      appendTerminal("", `--- Simulator and WorldState reset to clean baseline (${res.session_id}) ---`);
+      if (!confirm("Reset simulator session and fictional WorldState to clean baseline?")) return;
+      try {
+        const res = await apiPost("/api/simulator/reset", {});
+        state.sessionId = res.session_id;
+        if (els.sessionIdDisplay) {
+          els.sessionIdDisplay.textContent = res.session_id;
+        }
+        state.events = [];
+        renderEventsLog();
+        els.terminalOutput.innerHTML = "";
+        appendTerminal("", `--- Simulator and WorldState reset to clean baseline (${res.session_id}) ---`);
+      } catch (err) {
+        appendTerminal("", `Failed to reset simulator: ${err.message}`);
+      }
     });
 
-    // Focus terminal input
+    // Focus input when clicking anywhere in terminal body
     els.terminalBody.addEventListener("click", () => els.terminalInput.focus());
   }
 

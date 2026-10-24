@@ -68,7 +68,7 @@
     if (source === "simulator") {
       els.statusBadge.className = "safety-pill status-simulator";
       els.statusBadgeText.textContent = "Simulated Attacker Environment (In-Memory)";
-      if (dotSvg) dotSvg.style.color = "var(--accent-indigo)";
+      if (dotSvg) dotSvg.style.color = "var(--accent-copper)";
       return;
     }
 
@@ -99,7 +99,7 @@
       } else if (eventsCount > 0) {
         els.statusBadge.className = "safety-pill status-live-connected";
         els.statusBadgeText.textContent = `Live Cowrie Connected & Receiving (${eventsCount} Events)`;
-        if (dotSvg) dotSvg.style.color = "#34d399";
+        if (dotSvg) dotSvg.style.color = "var(--accent-emerald)";
       } else {
         els.statusBadge.className = "safety-pill status-live-waiting";
         els.statusBadgeText.textContent = "Live Telemetry: Waiting for Events";
@@ -420,13 +420,13 @@
     }
 
     container.innerHTML = `
-      <div class="source-banner" style="${isLive ? 'border-left: 4px solid var(--accent-cyan);' : ''}">
+      <div class="source-banner" style="${isLive ? 'border-left: 3px solid var(--accent-emerald);' : ''}">
         <div>
           <strong>Active Telemetry Source:</strong> ${escapeHtml(sourceLabel)}
           <span style="margin-left: 0.5rem; opacity: 0.75;">(${escapeHtml(state.data.input_file || "in-memory")})</span>
           ${isLive ? `
-            <div style="font-size: 0.78rem; color: var(--accent-cyan); margin-top: 0.25rem;">
-              &#128737; READ-ONLY LIVE TELEMETRY &bull; Honeypot untouched &bull; Deception recommendations are simulated advisory only
+            <div style="font-size: 0.75rem; color: var(--accent-emerald); margin-top: 0.2rem; font-family: var(--font-mono);">
+              &#128737; READ-ONLY LIVE TELEMETRY &bull; Honeypot untouched &bull; Recommendations advisory only
             </div>
           ` : ''}
         </div>
@@ -435,7 +435,7 @@
             ${sessions_count} Session(s) &bull; ${events_parsed} Events
           </span>
           ${health && health.last_ingested_at ? `
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; font-family: var(--font-mono);">
               Last collection: ${escapeHtml(health.last_ingested_at)}
             </div>
           ` : ''}
@@ -444,7 +444,7 @@
 
       <div class="grid-metrics">
         <div class="card metric-card">
-          <div class="metric-icon-box" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">
+          <div class="metric-icon-box" style="background: var(--accent-copper-tint); color: var(--accent-copper);">
             &#128187;
           </div>
           <div class="metric-data">
@@ -454,7 +454,7 @@
         </div>
 
         <div class="card metric-card">
-          <div class="metric-icon-box" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);">
+          <div class="metric-icon-box" style="background: var(--bg-surface); color: var(--text-secondary);">
             &#128225;
           </div>
           <div class="metric-data">
@@ -464,23 +464,23 @@
         </div>
 
         <div class="card metric-card">
-          <div class="metric-icon-box" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">
+          <div class="metric-icon-box" style="background: var(--accent-amber-tint); color: var(--accent-amber);">
             &#9888;
           </div>
           <div class="metric-data">
             <div class="metric-value">${avgScore}/100</div>
-            <div class="metric-label">Avg Threat Index (Heuristic)</div>
+            <div class="metric-label">Avg Threat Index</div>
           </div>
         </div>
 
         <div class="card metric-card">
-          <div class="metric-icon-box" style="background: ${isLive ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; color: ${isLive ? 'var(--accent-amber)' : 'var(--accent-emerald)'};">
+          <div class="metric-icon-box" style="background: ${isLive ? 'var(--accent-amber-tint)' : 'var(--accent-emerald-tint)'}; color: ${isLive ? 'var(--accent-amber)' : 'var(--accent-emerald)'};">
             ${isLive ? '&#128161;' : '&#128273;'}
           </div>
           <div class="metric-data">
             <div class="metric-value">${metricValue}</div>
             <div class="metric-label">${escapeHtml(metricLabel)}</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 0.15rem;">
               ${escapeHtml(metricNote)}
             </div>
           </div>
@@ -493,17 +493,17 @@
             <div class="card-title">&#128394; Behaviour Category Distribution</div>
             <span class="card-badge">${Object.keys(catCounts).length} Categories</span>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
             ${Object.entries(catCounts).map(([cat, count]) => {
               const pct = Math.round((count / sessions_count) * 100);
               return `
                 <div>
-                  <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.2rem;">
                     <span class="badge cat-${cat}">${cat}</span>
                     <span style="font-family: var(--font-mono); color: var(--text-secondary);">${count} session(s) (${pct}%)</span>
                   </div>
-                  <div style="width: 100%; height: 6px; background: var(--bg-surface); border-radius: var(--radius-full); overflow: hidden;">
-                    <div style="width: ${pct}%; height: 100%; background: var(--accent-cyan); border-radius: var(--radius-full);"></div>
+                  <div style="width: 100%; height: 5px; background: var(--bg-surface); border-radius: var(--radius-full); overflow: hidden;">
+                    <div style="width: ${pct}%; height: 100%; background: var(--accent-copper); border-radius: var(--radius-full);"></div>
                   </div>
                 </div>
               `;
@@ -516,22 +516,22 @@
             <div class="card-title">&#128202; Heuristic Threat Score Severity</div>
             <span class="card-badge">Range: 0–100</span>
           </div>
-          <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <div style="flex: 1; background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-emerald); font-family: var(--font-mono);">${low}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Low (0–25)</div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+            <div style="flex: 1; background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--accent-emerald-border); text-align: center;">
+              <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-emerald); font-family: var(--font-mono);">${low}</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Low (0–25)</div>
             </div>
-            <div style="flex: 1; background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(245, 158, 11, 0.3); text-align: center;">
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-amber); font-family: var(--font-mono);">${med}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Moderate (26–70)</div>
+            <div style="flex: 1; background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--accent-amber-border); text-align: center;">
+              <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-amber); font-family: var(--font-mono);">${med}</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Moderate (26–70)</div>
             </div>
-            <div style="flex: 1; background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(244, 63, 94, 0.3); text-align: center;">
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-rose); font-family: var(--font-mono);">${high}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Elevated (71–100)</div>
+            <div style="flex: 1; background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--accent-rose-border); text-align: center;">
+              <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent-rose); font-family: var(--font-mono);">${high}</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Elevated (71–100)</div>
             </div>
           </div>
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.4;">
-            *Note: The score is an explainable heuristic index derived from observed behavioral commands and brute-force counts, not a statistical compromise probability.
+          <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.75rem; line-height: 1.4;">
+            *Note: Explainable heuristic index derived from observed behavioral commands and brute-force counts, not a statistical compromise probability.
           </p>
         </div>
       </div>
@@ -557,12 +557,12 @@
             <tbody>
               ${sessions.map((s) => `
                 <tr style="cursor: pointer;" onclick="selectSession('${s.session_id}')">
-                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-cyan);">${escapeHtml(s.session_id)}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-copper);">${escapeHtml(s.session_id)}</td>
                   <td style="font-family: var(--font-mono);">${escapeHtml(s.source_ip || "unknown")}</td>
                   <td>${s.event_count}</td>
                   <td><span class="badge cat-${s.analysis.primary_category}">${s.analysis.primary_category}</span></td>
                   <td><span class="score-badge ${getScoreClass(s.analysis.score)}">${s.analysis.score}</span></td>
-                  <td style="font-family: var(--font-mono); font-size: 0.8rem;">${s.deception.policy_id}</td>
+                  <td style="font-family: var(--font-mono); font-size: 0.75rem;">${s.deception.policy_id}</td>
                   <td><span class="badge badge-${s.deception.status === 'accepted' ? 'accepted' : 'noop'}">${s.deception.status}</span></td>
                 </tr>
               `).join("")}
@@ -635,37 +635,37 @@
         <!-- Right: Session Detail Pane -->
         <div class="session-detail-pane">
           ${!activeSession ? `<div class="empty-state"><div class="empty-title">Select a Session</div></div>` : `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.95rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
               <div>
-                <h3 style="font-size: 1.15rem; font-family: var(--font-mono); font-weight: 700; color: var(--accent-cyan);">
+                <h3 style="font-size: 1.05rem; font-family: var(--font-mono); font-weight: 700; color: var(--accent-copper);">
                   Session: ${escapeHtml(activeSession.session_id)}
                 </h3>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
                   Source IP: <span style="font-family: var(--font-mono); color: var(--text-secondary);">${escapeHtml(activeSession.source_ip || 'unknown')}</span> |
-                  Events: <span style="color: var(--text-secondary);">${activeSession.event_count}</span>
+                  Events: <span style="color: var(--text-secondary); font-family: var(--font-mono);">${activeSession.event_count}</span>
                 </div>
               </div>
               <div style="text-align: right;">
-                <span class="score-badge ${getScoreClass(activeSession.analysis.score)}" style="font-size: 0.95rem; padding: 0.25rem 0.65rem;">
+                <span class="score-badge ${getScoreClass(activeSession.analysis.score)}" style="font-size: 0.85rem; padding: 0.2rem 0.55rem;">
                   Score: ${activeSession.analysis.score}/100
                 </span>
-                <div style="margin-top: 0.35rem;"><span class="badge cat-${activeSession.analysis.primary_category}">${activeSession.analysis.primary_category}</span></div>
+                <div style="margin-top: 0.25rem;"><span class="badge cat-${activeSession.analysis.primary_category}">${activeSession.analysis.primary_category}</span></div>
               </div>
             </div>
 
             <!-- Findings Section -->
-            <div style="margin-bottom: 1.25rem;">
-              <h4 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.5rem;">
+            <div style="margin-bottom: 0.95rem;">
+              <h4 style="font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.4rem; letter-spacing: 0.04em;">
                 Behaviour Findings (${activeSession.analysis.findings.length})
               </h4>
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
                 ${activeSession.analysis.findings.map((f) => `
-                  <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                      <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--accent-indigo);">${escapeHtml(f.rule_id)}</span>
+                  <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+                      <span style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; color: var(--accent-copper);">${escapeHtml(f.rule_id)}</span>
                       <span class="badge badge-${f.evidence_strength ? f.evidence_strength.toLowerCase() : 'weak'}">${f.evidence_strength}</span>
                     </div>
-                    <div style="font-size: 0.82rem; color: var(--text-secondary);">${escapeHtml(f.evidence)}</div>
+                    <div style="font-size: 0.78rem; color: var(--text-secondary);">${escapeHtml(f.evidence)}</div>
                   </div>
                 `).join("")}
               </div>
@@ -674,21 +674,21 @@
             <!-- Deception Decision -->
             <div class="deception-banner">
               <div class="deception-banner-header">
-                <span style="font-weight: 600; font-size: 0.85rem; color: var(--accent-emerald);">
+                <span style="font-weight: 600; font-size: 0.8rem; color: var(--accent-emerald);">
                   &#128737; Adaptive Deception Policy Response
                 </span>
                 <span class="badge badge-${activeSession.deception.status === 'accepted' ? 'accepted' : 'noop'}">${activeSession.deception.status}</span>
               </div>
-              <div style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+              <div style="font-size: 0.8rem; margin-bottom: 0.4rem;">
                 <strong>Policy Fired:</strong> <span style="font-family: var(--font-mono);">${activeSession.deception.policy_id}</span><br>
-                <strong>Approved Action:</strong> <span style="font-family: var(--font-mono); color: var(--accent-cyan);">${activeSession.deception.action.action_id}</span>
+                <strong>Approved Action:</strong> <span style="font-family: var(--font-mono); color: var(--accent-emerald); font-weight: 600;">${activeSession.deception.action.action_id}</span>
                 ${activeSession.deception.action.target ? `(Target: <span style="font-family: var(--font-mono);">${escapeHtml(activeSession.deception.action.target)}</span>)` : ''}
               </div>
-              <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+              <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
                 ${escapeHtml(activeSession.deception.explanation)}
               </div>
               ${activeSession.deception.state_change_applied ? `
-                <div style="font-size: 0.75rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 0.45rem; font-family: var(--font-mono); color: var(--text-muted);">
+                <div style="font-size: 0.72rem; background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.4rem; font-family: var(--font-mono); color: var(--text-muted);">
                   State Transition: ${escapeHtml(JSON.stringify(activeSession.deception.state_change_applied))}
                 </div>
               ` : ''}
@@ -756,7 +756,7 @@
         x: leftX,
         y: sY,
         type: "session",
-        color: "#06b6d4",
+        color: "#C77D4A",
       };
       nodes.push(sNode);
 
@@ -770,7 +770,7 @@
           x: midX,
           y: findingY,
           type: "finding",
-          color: "#f59e0b",
+          color: "#D9A441",
         };
         nodes.push(fNode);
         links.push({ from: sNode, to: fNode });
@@ -786,14 +786,14 @@
         x: rightX,
         y: actionY,
         type: "action",
-        color: "#10b981",
+        color: "#78A88B",
       };
       nodes.push(aNode);
       links.push({ from: sNode, to: aNode });
       actionY += 60;
     });
 
-    const svgHeight = Math.max(findingY, actionY, 540);
+    const svgHeight = Math.max(findingY, actionY, 360);
 
     container.innerHTML = `
       <div class="graph-controls">
@@ -804,7 +804,7 @@
       <svg class="graph-svg" id="attackGraphSvg" viewBox="0 0 960 ${svgHeight}">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#525247"/>
           </marker>
         </defs>
         <g id="graphTransformGroup" transform="translate(${state.graphPan.x}, ${state.graphPan.y}) scale(${state.graphZoom})">
@@ -818,15 +818,15 @@
             const cy2 = l.to.y;
             return `
               <path d="M ${l.from.x} ${l.from.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${l.to.x} ${l.to.y}"
-                    fill="none" stroke="#334155" stroke-width="1.8" marker-end="url(#arrow)" />
+                    fill="none" stroke="#414139" stroke-width="1.6" marker-end="url(#arrow)" />
             `;
           }).join("")}
 
           <!-- Nodes -->
           ${nodes.map((n) => `
             <g transform="translate(${n.x}, ${n.y})" style="cursor: pointer;" onclick="inspectGraphNode('${n.id}', '${n.type}')">
-              <rect x="-65" y="-18" width="130" height="36" rx="6" fill="#0f172a" stroke="${n.color}" stroke-width="1.6" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.5))" />
-              <text x="0" y="-2" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="600" font-family="'JetBrains Mono', monospace">${escapeHtml(n.label)}</text>
+              <rect x="-65" y="-18" width="130" height="36" rx="4" fill="#22231F" stroke="${n.color}" stroke-width="1.4" />
+              <text x="0" y="-2" text-anchor="middle" fill="#F2EBDD" font-size="11" font-weight="600" font-family="'JetBrains Mono', monospace">${escapeHtml(n.label)}</text>
               <text x="0" y="11" text-anchor="middle" fill="${n.color}" font-size="8.5" font-weight="500">${escapeHtml(truncate(n.sub, 18))}</text>
             </g>
           `).join("")}
@@ -909,19 +909,19 @@
           <div class="timeline-item">
             <div class="timeline-dot"></div>
             <div class="timeline-content">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-                <span style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-cyan);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-copper); font-size: 0.82rem;">
                   Session #${idx + 1}: ${escapeHtml(s.session_id)}
                 </span>
                 <span class="badge cat-${s.analysis.primary_category}">${s.analysis.primary_category}</span>
               </div>
-              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.35rem;">
                 Source IP: <span style="font-family: var(--font-mono);">${escapeHtml(s.source_ip || '192.0.2.x')}</span> |
-                Threat Score: <span style="font-weight: 600; color: var(--accent-amber);">${s.analysis.score}/100</span>
+                Threat Score: <span style="font-weight: 600; color: var(--accent-amber); font-family: var(--font-mono);">${s.analysis.score}/100</span>
               </div>
-              <div style="font-size: 0.78rem; background: var(--bg-surface); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="font-size: 0.75rem; background: var(--bg-secondary); padding: 0.35rem 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
                 <strong>Deception Defense:</strong> ${s.deception.policy_id} &rarr;
-                <span style="color: var(--accent-emerald); font-weight: 600;">${s.deception.action.action_id}</span>
+                <span style="color: var(--accent-emerald); font-weight: 600; font-family: var(--font-mono);">${s.deception.action.action_id}</span>
                 ${s.deception.action.target ? `(${escapeHtml(s.deception.action.target)})` : ''}
               </div>
             </div>
@@ -948,11 +948,11 @@
     });
 
     container.innerHTML = `
-      <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: var(--accent-blue); margin-bottom: 0.25rem;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 0.95rem;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 600; color: var(--accent-copper); margin-bottom: 0.2rem; font-size: 0.82rem;">
           &#9432; Deterministic Heuristic Scoring Model
         </div>
-        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+        <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">
           The threat score (0–100) is a deterministic indicator calibrated against observable telemetry patterns (recon commands, brute-force iterations, credential commands).
           It provides explainable triage without relying on opaque machine learning probabilities or external cloud models.
         </p>
@@ -977,11 +977,11 @@
             <tbody>
               ${allFindings.map((f) => `
                 <tr>
-                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-indigo);">${escapeHtml(f.rule_id)}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-copper);">${escapeHtml(f.rule_id)}</td>
                   <td><span class="badge cat-${f.category}">${f.category}</span></td>
                   <td><span class="badge badge-${f.evidence_strength ? f.evidence_strength.toLowerCase() : 'weak'}">${f.evidence_strength}</span></td>
-                  <td style="font-size: 0.82rem; color: var(--text-secondary);">${escapeHtml(f.evidence)}</td>
-                  <td style="font-family: var(--font-mono); font-size: 0.8rem; cursor: pointer; color: var(--accent-cyan);" onclick="selectSession('${f.session_id}'); switchTab('sessions');">
+                  <td style="font-size: 0.78rem; color: var(--text-secondary);">${escapeHtml(f.evidence)}</td>
+                  <td style="font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; color: var(--accent-copper); text-decoration: underline;" onclick="selectSession('${f.session_id}'); switchTab('sessions');">
                     ${escapeHtml(f.session_id)}
                   </td>
                 </tr>
@@ -1011,37 +1011,37 @@
 
     container.innerHTML = `
       ${isLive ? `
-        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--accent-amber-border); border-radius: var(--radius-sm); padding: 0.75rem 0.95rem; margin-bottom: 0.95rem;">
           <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-weight: 600; color: var(--accent-amber); display: flex; align-items: center; gap: 0.4rem;">
+            <div style="font-weight: 600; color: var(--accent-amber); display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
               &#9888; Live Honeypot Safety Boundary &bull; Simulated Advisory Recommendations Only
             </div>
-            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px;">ADVISORY ONLY</span>
+            <span class="badge" style="background: var(--accent-amber-tint); color: var(--accent-amber); border: 1px solid var(--accent-amber-border); font-size: 0.65rem; font-weight: 600;">ADVISORY ONLY</span>
           </div>
-          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.35rem;">
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
             Phase 7 operates strictly read-only. The deception engine evaluates live sessions and generates recommendations, but never writes decoys, modifies filesystem assets, or executes commands against real attackers or the Cowrie honeypot.
           </p>
         </div>
       ` : ''}
-      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+      <div style="background: var(--bg-surface); border: 1px solid var(--accent-emerald-border); border-radius: var(--radius-sm); padding: 0.75rem 0.95rem; margin-bottom: 0.95rem;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="font-weight: 600; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.4rem;">
+          <div style="font-weight: 600; color: var(--accent-emerald); display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem;">
             &#128737; Isolated Simulated World State
           </div>
           <span class="safety-pill">&#10004; Zero Host OS Execution</span>
         </div>
-        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.25rem;">
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
           All decoys, services, and accounts are in-memory synthetic assets. No real host filesystem files or network services are created or modified.
         </p>
       </div>
 
       <!-- Host Identity Card -->
-      <div class="card" style="margin-bottom: 1.25rem;">
+      <div class="card" style="margin-bottom: 0.95rem;">
         <div class="card-header">
           <div class="card-title">&#128421; Simulated Host Identity</div>
           <span class="card-badge">${escapeHtml(host.hostname || 'corp-srv-db01')}</span>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; font-size: 0.82rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.65rem; font-size: 0.78rem;">
           <div><span style="color: var(--text-muted);">OS Distribution:</span><br><strong>${escapeHtml(host.os_name || 'Ubuntu 22.04 LTS')}</strong></div>
           <div><span style="color: var(--text-muted);">Kernel:</span><br><code style="font-family: var(--font-mono);">${escapeHtml(host.kernel || '5.15.0-88')}</code></div>
           <div><span style="color: var(--text-muted);">Architecture:</span><br><strong>${escapeHtml(host.architecture || 'x86_64')}</strong></div>
@@ -1069,8 +1069,8 @@
               <tbody>
                 ${decoyFiles.map((d) => `
                   <tr>
-                    <td style="font-family: var(--font-mono); font-size: 0.78rem;">${escapeHtml(d.path)}</td>
-                    <td style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(d.file_type)}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">${escapeHtml(d.path)}</td>
+                    <td style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(d.file_type)}</td>
                     <td>
                       <span class="badge ${d.is_visible ? 'badge-accepted' : 'badge-noop'}">
                         ${d.is_visible ? 'VISIBLE (DEPLOYED)' : 'STANDBY (HIDDEN)'}
@@ -1102,7 +1102,7 @@
                 ${services.map((s) => `
                   <tr>
                     <td style="font-weight: 600;">${escapeHtml(s.name)}</td>
-                    <td style="font-family: var(--font-mono); font-size: 0.78rem;">${s.port}/${s.protocol}</td>
+                    <td style="font-family: var(--font-mono); font-size: 0.75rem;">${s.port}/${s.protocol}</td>
                     <td>
                       <span class="badge ${s.state === 'active' || s.state === 'revealed' ? 'badge-accepted' : 'badge-noop'}">
                         ${escapeHtml(s.state.toUpperCase())}
@@ -1134,9 +1134,9 @@
             <tbody>
               ${history.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No actions recorded yet.</td></tr>` : history.map((a) => `
                 <tr>
-                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-cyan);">${escapeHtml(a.action_id)}</td>
-                  <td style="font-family: var(--font-mono); font-size: 0.8rem;">${escapeHtml(a.target || 'none')}</td>
-                  <td style="font-size: 0.82rem; color: var(--text-secondary);">${escapeHtml(a.explanation)}</td>
+                  <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-copper);">${escapeHtml(a.action_id)}</td>
+                  <td style="font-family: var(--font-mono); font-size: 0.75rem;">${escapeHtml(a.target || 'none')}</td>
+                  <td style="font-size: 0.78rem; color: var(--text-secondary);">${escapeHtml(a.explanation)}</td>
                 </tr>
               `).join("")}
             </tbody>
@@ -1257,7 +1257,7 @@
     if (type === "error") icon = "&#9888;";
     if (type === "warning") icon = "&#9888;";
 
-    toast.innerHTML = `<span style="color: ${type === 'error' ? 'var(--accent-rose)' : type === 'success' ? 'var(--accent-emerald)' : 'var(--accent-cyan)'}; font-size: 1.1rem;">${icon}</span><span>${escapeHtml(message)}</span>`;
+    toast.innerHTML = `<span style="color: ${type === 'error' ? 'var(--accent-rose)' : type === 'success' ? 'var(--accent-emerald)' : 'var(--accent-copper)'}; font-size: 1.05rem;">${icon}</span><span>${escapeHtml(message)}</span>`;
     els.toastContainer.appendChild(toast);
 
     setTimeout(() => {

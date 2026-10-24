@@ -1,0 +1,41 @@
+# ==============================================================================
+# Cowrie User Database Configuration for AI Adaptive Cyber Deception Lab
+# ==============================================================================
+# File Location on Ubuntu: /home/sanjay/cowrie/etc/userdb.txt
+#
+# Syntax: username:uid:password
+#
+# Rules are evaluated top-down by Cowrie's UserDB authenticator.
+# The FIRST matching rule determines access:
+# - If an explicit password matches -> access is GRANTED (cowrie.login.success)
+# - If a negative rule matches (!prefix) -> access is DENIED (cowrie.login.failed)
+# - If no rule matches -> access is DENIED (cowrie.login.failed)
+#
+# CRITICAL FIX:
+# The default cowrie template contains "root:x:*" which allows any password
+# for root. That wildcard has been REMOVED below so that unauthorized passwords
+# reliably produce genuine 'cowrie.login.failed' events for our analysis engine.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Approved Demonstration Credentials (allowed post-login simulation access)
+# ------------------------------------------------------------------------------
+root:0:CyberDeception2026!
+admin:0:AdminPass2026!
+ubuntu:1000:ubuntu
+testuser:1000:TestPass123!
+
+# ------------------------------------------------------------------------------
+# 2. Explicitly Denied Common Brute-Force Passwords (optional safeguard)
+# ------------------------------------------------------------------------------
+root:0:!root
+root:0:!123456
+root:0:!password
+root:0:!toor
+admin:0:!admin
+admin:0:!123456
+
+# ==============================================================================
+# IMPORTANT: Do NOT append wildcard entries like 'root:0:*' or '*:x:*' here.
+# Without wildcards, all other passwords produce genuine cowrie.login.failed logs.
+# ==============================================================================
